@@ -1,0 +1,175 @@
+#!/usr/bin/python
+print 'Content-type: text/html\n\n'
+import cgi, cgitb, os, time, md5
+cgitb.enable()
+
+#~~~~~~~~~~~~~~~~~~~puts fieldstorage in dictionary D~~~~~~~~~~~~~~~~~~~~~~~~~~
+form=cgi.FieldStorage()
+D={}
+for keys in form:
+    D[keys]=form[keys].value
+#D now looks like this when logging in:
+#{'login':'login','user':'blah','Pass':'blehpass'}
+
+#~~~~~~~~~~~~~~~~~~~ALL important values~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+date = time.strftime("%Y%m%d")
+IP = str(cgi.escape(os.environ["REMOTE_ADDR"]))
+
+b=open('../data/homepages.txt','r')
+pagedata=b.readlines()
+b.close()
+
+h=open('../data/combos.txt','r')
+combodata=h.read()
+h.close()
+    
+j = open('../data/loggedin.txt','r')
+userData = j.readlines()
+j.close()
+
+users = []
+for line in userData:
+    users.append(line.strip('\n').split(','))
+#format of users: [['ron', '1', '149.89.151.125', '2013.06.05.13\r']]
+
+activeUser = ''
+for user in users:
+    if IP == user[2] and user[3] == date and user[1] == '1' and user[0] == D['user']:
+        activeUser = user[0]
+if activeUser == '':
+    s=open('../data/loggedin.txt','a')
+    addUser = ''
+    addUser+= D['user'] + ',1,' + IP + ',' + date + '\r\n'
+    s.write(addUser)
+    s.close()
+    activeUser = D['user']
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+def displayhomepage():
+    #opens the homepagesfile and reads each line
+    userstart=pagedata.index(usernamee+'USER\n')
+    picture=pagedata[userstart+1].strip('\n')
+    about=pagedata[userstart+2].strip('\n')
+    messages=pagedata[userstart+3].strip('\n')
+    message=''
+    for userandmessage in messages.strip('\n').strip(';').split(';'):
+        message+='''<div class="row">
+                                <div class="span2"><h4>'''+userandmessage.split(',')[0]+'''</h4></div>
+                                <div class="span6">'''+userandmessage.split(',')[1]+'''</div>
+                           </div><hr>'''
+    return'''
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Home of '''+ usernamee+ '''</title>
+                <meta name"description" content="Learn more about Stuyvesant High School! Everything from facts about the school, about the teachers, student reviews are all compiled in one place!">
+                <link rel="stylesheet" href="bootstrap.min.css">
+                <link rel="stylesheet" href="bootstrap-responsive.min.css">
+                <link rel="stylesheet" href="main.css">
+                <script src="http://code.jquery.com/jquery.min.js"></script>
+                <script>window.jQuery || document.write('<script src="/js/jquery-1.10.0.min.js"><\/script>')</script>
+                <script src="/js/bootstrap.min.js"></script>
+                <link href='http://fonts.googleapis.com/css?family=Open+Sans|Finger+Paint' rel='stylesheet' type='text/css'>
+            </head>
+        <div class="navbar navbar-fixed-top" style="font-family:Open Sans;">
+                    <div class="navbar-inner">
+                        <div class="container">
+                            <a class="brand" href="/"><i class="icon-home" style="vertical-align:0%;"></i> Hello '''+usernamee+'''</a>
+                                <form class="navbar-search pull-left" method="POST" action="/search.py">
+                                    <div class="input-append">
+                                        <input type="text" class="span3" name="search" placeholder="Search...">
+                                        <button type="submit" class="btn" name="submit" value="search"><i class="icon-search"></i>Go</button>
+                                    </div>
+                                </form>
+                            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </a>
+                            <div class="nav-collapse collapse">
+                                <ul class="nav pull-right">
+                                    <li><a href="game.py">Games</a></li>
+                                    <li><a href="tools.py">Tools</a></li>
+                                    <li><a href="reddit.py">Reddit</a></li>
+                                    <li class="divider-vertical"></li>
+                                    <li><a href="testhp.py"><i class="icon-user" style="vertical-align:-10%;"></i> Homepage</a></li>
+                                    <li><a href="/final/logout.py">Logout</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <h1>Admin2 <small><span class="pull-right"><button class="btn btn-info" onclick="location.href='edit.py'">Settings</button></small></h1>
+                    <br>
+                    <div class="row">
+                        <div class="span4">
+                            <img src="'''+picture+'''" style="width:260px;max-height:400px">
+                            <form method="get" action="picture.py">
+                                <textarea style="width:100%" rows=1 name="post" placeholder="Picture url"></textarea>
+                                <button class="btn btn-inverse pull-right" name="submit" value="post">Add Picture</button>
+                            </form>
+                            <h3>About</h3>'''+about+'''
+                            <form method="get" action="about.py">
+                                <textarea style="width:100%" rows=4 name="post" placeholder="Write Something About Yourself"></textarea>
+                                <button class="btn btn-inverse pull-right" name="submit" value="post">Update!</button>
+                            </form>
+                            <h3>Game Progress</h3>
+                            <h5 style="color:#33CC33">Choose your own adventure <small>0%</small></h5>
+                            <div class="progress progress-striped active">
+                                <div class="bar" style="width:0%;"></div>
+                            </div>
+                        </div>
+                        <div class="span8">
+                            <form method="get" action="message.py">
+                                <textarea style="width:100%" rows=4 name="post" placeholder="Leave a message on '''+usernamee+''''s wall!"></textarea>
+                                <button class="btn btn-inverse pull-right" name="submit" value="post">Post</button>
+                            </form>
+                            <div class="page-header">
+                                <h3>'''+usernamee+''''s Wall</h3>
+                            </div>
+                            <div class="wall">
+                                <div class="row">
+                                    <div class="span2"><h4>Stuy</h4></div>
+                                    <div class="span6">Welcome to the site!</div>
+                                </div><hr>
+                                '''+message+'''
+                            </div>
+                        </div>
+                </div>
+            </body>
+        </html>
+        '''
+#~~~~~~~~~~~~~~~~~~~~~~~~~~login or returning~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if 'login' in D:
+    if 'user' in D and 'Pass' in D:
+        m=md5.new()                             
+        m.update(D['Pass'])
+        hashedpass=str(m.hexdigest())
+        combopass=combodata[combodata.index(D['user'])+len(D['user'])+1:combodata.index(D['user'])+len(D['user'])+33]
+        if D['user'] in combodata and hashedpass==combopass:
+        #checks if the username is in combos.txt and if the passwords match
+            usernamee=D['user']
+            page=displayhomepage()
+        else:
+            page='INCORRECT USERNAME OR PASSWORD'
+        #if the username or pass are wrong, output this^
+    else:
+        page='YOU DID NOT INPUT YOUR USERNAME OR PASSWORD'
+    #if the user didnt put username or password, output this^
+else:
+    #check if theyre still logged in!!!!!!!!!!!
+    r=open('../data/loggedin.txt','r')
+    data=r.readlines()
+    r.close()
+    for lines in data:
+        if str(lines.split(',')[2])==IP and lines.split(',')[1]=='1':
+            page=displayhomepage()
+        else:
+            page='YOU ARE NO LONGER LOGGED IN!'
+#if the user is coming back from another page
+print page
+
