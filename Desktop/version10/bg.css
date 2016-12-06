@@ -1,0 +1,21 @@
+body 
+{
+	background-color:#210B61;
+}
+h1
+{
+	color:lightgreen;
+	text-align:center;
+}
+button 
+{
+display: block;
+width: 175px;
+height: 45px;
+margin: 0px auto;
+}
+button input:hover{
+background-image:url('images/clicktosend_hover.gif');
+background-position:left top;
+background-repeat:no-repeat;
+}
